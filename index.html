@@ -365,6 +365,22 @@ header {
   color: var(--ink-faint);
 }
 
+.todo-delete {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.todo-item:hover .todo-delete { opacity: 1; }
+.todo-delete:hover { color: #d04040; }
+
 /* Card Actions */
 .card-actions {
   display: flex;
@@ -523,6 +539,7 @@ header {
       <button class="filter-btn active" onclick="filterProjects('all', this)">全部</button>
       <button class="filter-btn" onclick="filterProjects('active', this)">進行中</button>
       <button class="filter-btn" onclick="filterProjects('review', this)">即將完成</button>
+      <button class="filter-btn" onclick="filterProjects('archived', this)">已封存</button>
     </div>
   </div>
 
@@ -651,7 +668,8 @@ function dbToProject(row) {
     progress: row.progress || 0,
     stage: row.stage || '',
     next: row.next_step || '',
-    todos: row.todos || []
+    todos: row.todos || [],
+    archived: row.archived || false
   };
 }
 
@@ -666,6 +684,7 @@ function projectToDb(p) {
     stage: p.stage,
     next_step: p.next,
     todos: p.todos || [],
+    archived: p.archived || false,
     updated_at: new Date().toISOString()
   };
 }
@@ -719,8 +738,13 @@ function formatDate(d) {
 function render() {
   const grid = document.getElementById('projectsGrid');
   let filtered = projects;
-  if (currentFilter === 'active') filtered = projects.filter(p => p.progress < 90);
-  else if (currentFilter === 'review') filtered = projects.filter(p => p.progress >= 90);
+  if (currentFilter === 'archived') {
+    filtered = projects.filter(p => p.archived);
+  } else {
+    filtered = projects.filter(p => !p.archived);
+    if (currentFilter === 'active') filtered = filtered.filter(p => p.progress < 90);
+    else if (currentFilter === 'review') filtered = filtered.filter(p => p.progress >= 90);
+  }
 
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="loading-state">沒有符合條件的專案</div>';
@@ -733,6 +757,7 @@ function render() {
         <li class="todo-item ${t.done ? 'done' : ''}">
           <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo('${p.id}', ${i})">
           <span>${escapeHtml(t.text)}</span>
+          <button class="todo-delete" onclick="deleteTodo('${p.id}', ${i})" title="刪除">×</button>
         </li>
       `).join('');
 
@@ -775,21 +800,28 @@ function render() {
           ${todos   ? `<div class="section"><div class="section-title">待辦 · ${pendingTodos} / ${totalTodos}</div><ul class="todo-list">${todos}</ul></div>` : ''}
 
           <div class="card-actions">
-            <button class="action-btn" onclick="editProject('${p.id}')">編輯</button>
-            <button class="action-btn" onclick="addTodoTo('${p.id}')">新增待辦</button>
-            <button class="action-btn danger" onclick="deleteProject('${p.id}')">刪除</button>
+            ${p.archived ? `
+              <button class="action-btn" onclick="toggleArchive('${p.id}')">取消封存</button>
+              <button class="action-btn danger" onclick="deleteProject('${p.id}')">刪除</button>
+            ` : `
+              <button class="action-btn" onclick="editProject('${p.id}')">編輯</button>
+              <button class="action-btn" onclick="addTodoTo('${p.id}')">新增待辦</button>
+              <button class="action-btn" onclick="toggleArchive('${p.id}')">封存</button>
+              <button class="action-btn danger" onclick="deleteProject('${p.id}')">刪除</button>
+            `}
           </div>
         </div>
       `;
     }).join('');
   }
 
-  document.getElementById('totalCount').textContent = projects.length;
-  const avg = projects.length
-    ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length)
+  const activeProjects = projects.filter(p => !p.archived);
+  document.getElementById('totalCount').textContent = activeProjects.length;
+  const avg = activeProjects.length
+    ? Math.round(activeProjects.reduce((s, p) => s + p.progress, 0) / activeProjects.length)
     : 0;
   document.getElementById('avgProgress').textContent = avg + '%';
-  const todoTotal = projects.reduce((s, p) => s + (p.todos || []).filter(t => !t.done).length, 0);
+  const todoTotal = activeProjects.reduce((s, p) => s + (p.todos || []).filter(t => !t.done).length, 0);
   document.getElementById('todoCount').textContent = todoTotal;
 }
 
@@ -887,6 +919,22 @@ async function saveProject() {
 
   if (ok) { render(); closeModal(); }
   else { alert('儲存失敗，請檢查網路連線'); }
+}
+
+async function deleteTodo(projectId, todoIdx) {
+  const p = projects.find(x => x.id === projectId);
+  if (!p) return;
+  p.todos.splice(todoIdx, 1);
+  render();
+  await persistProject(p);
+}
+
+async function toggleArchive(id) {
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
+  p.archived = !p.archived;
+  render();
+  await persistProject(p);
 }
 
 async function deleteProject(id) {

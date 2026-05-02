@@ -3,247 +3,516 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>個人接案專案追蹤板</title>
+<title>接案紀事</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    padding: 24px;
-    color: #2d3748;
-  }
-  .container { max-width: 1400px; margin: 0 auto; }
-  header {
-    background: rgba(255,255,255,0.95);
-    border-radius: 16px;
-    padding: 24px 32px;
-    margin-bottom: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  header h1 {
-    font-size: 28px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .subtitle { color: #718096; font-size: 14px; margin-top: 4px; }
-  .stats { display: flex; gap: 16px; flex-wrap: wrap; }
-  .stat-box {
-    background: linear-gradient(135deg, #f7fafc, #edf2f7);
-    padding: 12px 20px;
-    border-radius: 12px;
-    text-align: center;
-    min-width: 100px;
-  }
-  .stat-value { font-size: 24px; font-weight: 700; color: #667eea; }
-  .stat-label { font-size: 12px; color: #718096; margin-top: 2px; }
-  .controls {
-    background: rgba(255,255,255,0.95);
-    border-radius: 12px;
-    padding: 16px 24px;
-    margin-bottom: 24px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  }
-  .btn {
-    padding: 10px 18px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-  .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(102,126,234,0.4); }
-  .btn-secondary { background: #edf2f7; color: #4a5568; }
-  .btn-secondary:hover { background: #e2e8f0; }
-  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
-  .filter-group { display: flex; gap: 8px; align-items: center; margin-left: auto; }
-  .filter-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    cursor: pointer;
-    font-size: 13px;
-    color: #4a5568;
-  }
-  .filter-btn.active { background: #667eea; color: white; border-color: #667eea; }
-  .projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-    gap: 20px;
-  }
-  .loading-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 60px;
-    color: white;
-    font-size: 18px;
-  }
-  .project-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-  .project-card:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
-  .project-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 4px;
-    background: linear-gradient(90deg, var(--card-color, #667eea), var(--card-color2, #764ba2));
-  }
-  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-  .project-title { font-size: 18px; font-weight: 700; color: #2d3748; flex: 1; }
-  .project-client {
-    display: inline-block;
-    background: #edf2f7;
-    color: #4a5568;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    margin-top: 6px;
-  }
-  .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-  .status-active { background: #fed7d7; color: #c53030; }
-  .status-progress { background: #feebc8; color: #c05621; }
-  .status-review { background: #c6f6d5; color: #22543d; }
-  .dates { display: flex; gap: 16px; margin-bottom: 16px; font-size: 13px; color: #718096; }
-  .date-item { display: flex; flex-direction: column; }
-  .date-label { font-size: 11px; color: #a0aec0; }
-  .date-value { font-weight: 600; color: #4a5568; margin-top: 2px; }
-  .progress-section { margin-bottom: 16px; }
-  .progress-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-  .progress-label { color: #4a5568; font-weight: 600; }
-  .progress-value { color: #667eea; font-weight: 700; }
-  .progress-bar { width: 100%; height: 10px; background: #edf2f7; border-radius: 5px; overflow: hidden; }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--card-color, #667eea), var(--card-color2, #764ba2));
-    border-radius: 5px;
-    transition: width 0.3s ease;
-  }
-  .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #edf2f7; }
-  .section-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #a0aec0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .section-content { font-size: 13px; color: #4a5568; line-height: 1.6; white-space: pre-wrap; }
-  .todo-list { list-style: none; }
-  .todo-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 6px 0;
-    font-size: 13px;
-    color: #4a5568;
-    line-height: 1.5;
-  }
-  .todo-item input[type="checkbox"] { margin-top: 3px; cursor: pointer; accent-color: #667eea; }
-  .todo-item.done { text-decoration: line-through; color: #a0aec0; }
-  .card-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #edf2f7;
-  }
-  .action-btn {
-    flex: 1;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    cursor: pointer;
-    font-size: 12px;
-    color: #4a5568;
-    transition: all 0.2s;
-  }
-  .action-btn:hover { background: #edf2f7; }
-  .modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .modal.active { display: flex; }
-  .modal-content {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 600px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  .modal-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #2d3748; }
-  .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; }
-  .form-input, .form-textarea {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-  }
-  .form-textarea { min-height: 80px; resize: vertical; }
-  .form-input:focus, .form-textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-  }
-  .modal-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
-  .footer-note {
-    text-align: center;
-    color: rgba(255,255,255,0.8);
-    font-size: 12px;
-    margin-top: 16px;
-  }
-  @media (max-width: 768px) {
-    .projects-grid { grid-template-columns: 1fr; }
-    header { flex-direction: column; align-items: flex-start; }
-  }
+:root {
+  --bg:          #FFFFFF;
+  --surface:     #FFFFFF;
+  --surface-alt: #F7F7F5;
+  --border:      #E9E9E7;
+  --border-dark: #D3D3CF;
+  --ink:         #1A1A1A;
+  --ink-mid:     #787774;
+  --ink-faint:   #AEADA9;
+  --accent:      #1A1A1A;
+  --tag-bg:      #F1F1EF;
+  --tag-text:    #787774;
+  --dot-a:       #E07B39;
+  --dot-b:       #5A9E6F;
+  --dot-c:       #9E5A9E;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 40px;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.header-title h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+
+.header-title .subtitle {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+.stats {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stat-box {
+  padding: 10px 24px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.stat-box:last-child { border-right: none; }
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+  font-weight: 400;
+}
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.btn-primary:hover { background: #333; border-color: #333; }
+
+.btn-secondary {
+  background: var(--bg);
+  color: var(--ink-mid);
+}
+
+.btn-secondary:hover { background: var(--surface-alt); color: var(--ink); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.filter-group {
+  display: flex;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.filter-btn {
+  padding: 7px 14px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-mid);
+  transition: all 0.15s;
+}
+
+.filter-btn:last-child { border-right: none; }
+.filter-btn.active { background: var(--ink); color: #fff; }
+.filter-btn:hover:not(.active) { background: var(--surface-alt); color: var(--ink); }
+
+/* ── Grid ── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 12px;
+}
+
+.loading-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px;
+  color: var(--ink-faint);
+  font-size: 14px;
+}
+
+/* ── Card ── */
+.project-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.project-card:hover {
+  border-color: var(--border-dark);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.project-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.project-client {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+  font-weight: 400;
+}
+
+.status-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--tag-bg);
+  border-radius: 4px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.amber  { background: var(--dot-a); }
+.status-dot.green  { background: var(--dot-b); }
+.status-dot.purple { background: var(--dot-c); }
+
+.status-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tag-text);
+}
+
+/* Dates */
+.dates {
+  display: flex;
+  gap: 20px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.date-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-faint);
+}
+
+.date-value {
+  font-size: 12px;
+  color: var(--ink-mid);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* Progress */
+.progress-section { margin-bottom: 2px; }
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.progress-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* Sections */
+.section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+
+.section-content {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.65;
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+/* Todo */
+.todo-list { list-style: none; }
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-mid);
+  line-height: 1.55;
+}
+
+.todo-item input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--ink);
+  flex-shrink: 0;
+}
+
+.todo-item.done span {
+  text-decoration: line-through;
+  color: var(--ink-faint);
+}
+
+/* Card Actions */
+.card-actions {
+  display: flex;
+  gap: 0;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.action-btn {
+  flex: 1;
+  padding: 6px 4px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  transition: all 0.15s;
+  border-radius: 0;
+}
+
+.action-btn:last-child { border-right: none; }
+.action-btn:hover { color: var(--ink); background: var(--surface-alt); }
+.action-btn.danger:hover { color: #d04040; background: #fef5f5; }
+
+/* ── Modal ── */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 36px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--ink-mid);
+  margin-bottom: 6px;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-textarea { min-height: 80px; resize: vertical; }
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px rgba(26,26,26,0.08);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+/* ── Footer ── */
+.footer-note {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 400;
+  margin-top: 48px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .container { padding: 28px 16px; }
+  .projects-grid { grid-template-columns: 1fr; }
+  header { flex-direction: column; align-items: flex-start; }
+  .stats { width: 100%; }
+  .stat-box { flex: 1; }
+  .modal-content { padding: 24px 20px; }
+  .filter-group { margin-left: 0; }
+}
 </style>
 </head>
 <body>
 <div class="container">
+
   <header>
-    <div>
-      <h1>個人接案專案追蹤板</h1>
-      <div class="subtitle">最後更新：<span id="lastUpdated">-</span></div>
+    <div class="header-brand">
+      <img src="./logo.png" alt="logo" class="logo-img">
+      <div class="header-title">
+        <h1>接案紀事</h1>
+        <div class="subtitle">最後更新：<span id="lastUpdated">—</span></div>
+      </div>
     </div>
     <div class="stats">
-      <div class="stat-box"><div class="stat-value" id="totalCount">0</div><div class="stat-label">總專案</div></div>
-      <div class="stat-box"><div class="stat-value" id="avgProgress">0%</div><div class="stat-label">平均進度</div></div>
-      <div class="stat-box"><div class="stat-value" id="todoCount">0</div><div class="stat-label">待辦事項</div></div>
+      <div class="stat-box">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">專案</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="avgProgress">0%</div>
+        <div class="stat-label">平均進度</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="todoCount">0</div>
+        <div class="stat-label">待辦</div>
+      </div>
     </div>
   </header>
 
@@ -251,7 +520,6 @@
     <button class="btn btn-primary" onclick="openAddModal()">+ 新增專案</button>
     <button class="btn btn-secondary" onclick="exportData()">匯出備份</button>
     <div class="filter-group">
-      <span style="font-size:13px;color:#718096;">篩選：</span>
       <button class="filter-btn active" onclick="filterProjects('all', this)">全部</button>
       <button class="filter-btn" onclick="filterProjects('active', this)">進行中</button>
       <button class="filter-btn" onclick="filterProjects('review', this)">即將完成</button>
@@ -259,11 +527,13 @@
   </div>
 
   <div class="projects-grid" id="projectsGrid">
-    <div class="loading-state">載入中...</div>
+    <div class="loading-state">載入中…</div>
   </div>
-  <div class="footer-note">資料儲存於雲端資料庫，跨裝置即時同步。</div>
+
+  <div class="footer-note">資料儲存於雲端，跨裝置即時同步。</div>
 </div>
 
+<!-- Modal -->
 <div class="modal" id="projectModal">
   <div class="modal-content">
     <div class="modal-title" id="modalTitle">新增專案</div>
@@ -299,8 +569,8 @@
       <textarea class="form-textarea" id="projectNext" placeholder="接下來的計畫"></textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">工作筆記/待辦事項（每行一項）</label>
-      <textarea class="form-textarea" id="projectTodos" placeholder="1. 待辦事項一&#10;2. 待辦事項二" style="min-height:120px;"></textarea>
+      <label class="form-label">工作筆記 / 待辦事項（每行一項）</label>
+      <textarea class="form-textarea" id="projectTodos" placeholder="待辦事項一&#10;待辦事項二" style="min-height:120px;"></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal()">取消</button>
@@ -315,15 +585,6 @@ const db = supabase.createClient(
   'https://rstaitavlvzlinehniaw.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdGFpdGF2bHZ6bGluZWhuaWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTI2ODAsImV4cCI6MjA5MzI4ODY4MH0.dFGt15A8Rnw7C60Au-0HMIcSjEcl-F39Pf-4F3eEY7c'
 );
-
-const COLOR_THEMES = [
-  { color: '#667eea', color2: '#764ba2' },
-  { color: '#f093fb', color2: '#f5576c' },
-  { color: '#4facfe', color2: '#00f2fe' },
-  { color: '#43e97b', color2: '#38f9d7' },
-  { color: '#fa709a', color2: '#fee140' },
-  { color: '#30cfd0', color2: '#330867' },
-];
 
 const SEED_PROJECTS = [
   {
@@ -425,10 +686,7 @@ async function loadProjects() {
   if (data.length === 0) {
     const rows = SEED_PROJECTS.map(projectToDb);
     const { error: seedErr } = await db.from('projects').insert(rows);
-    if (!seedErr) {
-      projects = SEED_PROJECTS;
-      render();
-    }
+    if (!seedErr) { projects = SEED_PROJECTS; render(); }
     return;
   }
 
@@ -448,9 +706,9 @@ async function persistProject(p) {
 }
 
 function getStatus(progress) {
-  if (progress >= 90) return { label: '即將完成', class: 'status-review' };
-  if (progress >= 50) return { label: '進行中', class: 'status-progress' };
-  return { label: '起步中', class: 'status-active' };
+  if (progress >= 90) return { label: '即將完成', dot: 'purple' };
+  if (progress >= 50) return { label: '進行中',   dot: 'green'  };
+  return                      { label: '起步中',   dot: 'amber'  };
 }
 
 function formatDate(d) {
@@ -467,42 +725,59 @@ function render() {
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="loading-state">沒有符合條件的專案</div>';
   } else {
-    grid.innerHTML = filtered.map((p, idx) => {
-      const theme = COLOR_THEMES[idx % COLOR_THEMES.length];
+    grid.innerHTML = filtered.map(p => {
       const status = getStatus(p.progress);
+      const pendingTodos = (p.todos || []).filter(t => !t.done).length;
+      const totalTodos   = (p.todos || []).length;
       const todos = (p.todos || []).map((t, i) => `
         <li class="todo-item ${t.done ? 'done' : ''}">
           <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo('${p.id}', ${i})">
           <span>${escapeHtml(t.text)}</span>
         </li>
       `).join('');
+
       return `
-        <div class="project-card" style="--card-color:${theme.color};--card-color2:${theme.color2};">
+        <div class="project-card">
           <div class="card-header">
             <div>
               <div class="project-title">${escapeHtml(p.name)}</div>
-              <span class="project-client">客戶：${escapeHtml(p.client)}</span>
+              <div class="project-client">${escapeHtml(p.client)}</div>
             </div>
-            <span class="status-badge ${status.class}">${status.label}</span>
+            <div class="status-tag">
+              <div class="status-dot ${status.dot}"></div>
+              <span class="status-label">${status.label}</span>
+            </div>
           </div>
+
           <div class="dates">
-            <div class="date-item"><span class="date-label">開始日期</span><span class="date-value">${formatDate(p.start)}</span></div>
-            <div class="date-item"><span class="date-label">截止日期</span><span class="date-value">${formatDate(p.end)}</span></div>
+            <div>
+              <div class="date-label">開始</div>
+              <div class="date-value">${formatDate(p.start)}</div>
+            </div>
+            <div>
+              <div class="date-label">截止</div>
+              <div class="date-value">${formatDate(p.end)}</div>
+            </div>
           </div>
+
           <div class="progress-section">
             <div class="progress-header">
-              <span class="progress-label">完成進度</span>
+              <span class="progress-label">進度</span>
               <span class="progress-value">${p.progress}%</span>
             </div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%"></div></div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${p.progress}%"></div>
+            </div>
           </div>
+
           ${p.stage ? `<div class="section"><div class="section-title">當前階段</div><div class="section-content">${escapeHtml(p.stage)}</div></div>` : ''}
-          ${p.next ? `<div class="section"><div class="section-title">下一步</div><div class="section-content">${escapeHtml(p.next)}</div></div>` : ''}
-          ${todos ? `<div class="section"><div class="section-title">工作筆記/待辦事項 (${(p.todos||[]).filter(t=>!t.done).length}/${(p.todos||[]).length})</div><ul class="todo-list">${todos}</ul></div>` : ''}
+          ${p.next  ? `<div class="section"><div class="section-title">下一步</div><div class="section-content">${escapeHtml(p.next)}</div></div>` : ''}
+          ${todos   ? `<div class="section"><div class="section-title">待辦 · ${pendingTodos} / ${totalTodos}</div><ul class="todo-list">${todos}</ul></div>` : ''}
+
           <div class="card-actions">
             <button class="action-btn" onclick="editProject('${p.id}')">編輯</button>
             <button class="action-btn" onclick="addTodoTo('${p.id}')">新增待辦</button>
-            <button class="action-btn" onclick="deleteProject('${p.id}')" style="color:#e53e3e;">刪除</button>
+            <button class="action-btn danger" onclick="deleteProject('${p.id}')">刪除</button>
           </div>
         </div>
       `;
@@ -510,7 +785,9 @@ function render() {
   }
 
   document.getElementById('totalCount').textContent = projects.length;
-  const avg = projects.length ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length) : 0;
+  const avg = projects.length
+    ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length)
+    : 0;
   document.getElementById('avgProgress').textContent = avg + '%';
   const todoTotal = projects.reduce((s, p) => s + (p.todos || []).filter(t => !t.done).length, 0);
   document.getElementById('todoCount').textContent = todoTotal;
@@ -602,29 +879,21 @@ async function saveProject() {
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true;
-  btn.textContent = '儲存中...';
+  btn.textContent = '儲存中…';
 
   const ok = await persistProject(data);
   btn.disabled = false;
   btn.textContent = '儲存';
 
-  if (ok) {
-    render();
-    closeModal();
-  } else {
-    alert('儲存失敗，請檢查網路連線');
-  }
+  if (ok) { render(); closeModal(); }
+  else { alert('儲存失敗，請檢查網路連線'); }
 }
 
 async function deleteProject(id) {
   if (!confirm('確定要刪除這個專案嗎？')) return;
   const { error } = await db.from('projects').delete().eq('id', id);
-  if (!error) {
-    projects = projects.filter(p => p.id !== id);
-    render();
-  } else {
-    alert('刪除失敗，請稍後再試');
-  }
+  if (!error) { projects = projects.filter(p => p.id !== id); render(); }
+  else { alert('刪除失敗，請稍後再試'); }
 }
 
 async function addTodoTo(id) {
@@ -648,7 +917,7 @@ function exportData() {
   URL.revokeObjectURL(url);
 }
 
-document.getElementById('projectModal').addEventListener('click', (e) => {
+document.getElementById('projectModal').addEventListener('click', e => {
   if (e.target.id === 'projectModal') closeModal();
 });
 

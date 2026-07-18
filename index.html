@@ -26,6 +26,7 @@
   --dot-b:       #5A9E6F;
   --dot-c:       #9E5A9E;
   --dot-d:       #4A7FBF;
+  --dot-e:       #4E9A97;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -276,6 +277,7 @@ header {
 .status-dot.green  { background: var(--dot-b); }
 .status-dot.purple { background: var(--dot-c); }
 .status-dot.blue   { background: var(--dot-d); }
+.status-dot.teal   { background: var(--dot-e); }
 
 .status-label {
   font-size: 11px;
@@ -799,6 +801,7 @@ header {
             <button class="btn btn-primary" onclick="openEventModal()">+ 新增行程</button>
             <div class="filter-group" id="calTypeFilter">
               <button class="filter-btn active" onclick="filterEvents('all', this)">全部</button>
+              <button class="filter-btn" onclick="filterEvents('task', this)">工作</button>
               <button class="filter-btn" onclick="filterEvents('meeting', this)">會議</button>
               <button class="filter-btn" onclick="filterEvents('deadline', this)">交件</button>
               <button class="filter-btn" onclick="filterEvents('payment', this)">收款</button>
@@ -891,10 +894,11 @@ header {
     <div class="form-group">
       <label class="form-label">類型</label>
       <select class="form-input" id="eventType">
+        <option value="task" selected>工作</option>
         <option value="meeting">會議</option>
         <option value="deadline">交件</option>
         <option value="payment">收款</option>
-        <option value="other" selected>其他</option>
+        <option value="other">其他</option>
       </select>
     </div>
     <div class="form-group">
@@ -1294,6 +1298,7 @@ let calYear, calMonth;
 let calFilter = 'all';
 
 const EVENT_TYPES = {
+  task:     { label: '工作', dot: 'teal'   },
   meeting:  { label: '會議', dot: 'purple' },
   deadline: { label: '交件', dot: 'amber'  },
   payment:  { label: '收款', dot: 'green'  },
@@ -1478,7 +1483,7 @@ function openEventModal(id, presetDate) {
     document.getElementById('eventTitle').value = '';
     document.getElementById('eventDate').value = presetDate || toDateStr(calYear, calMonth, new Date().getDate());
     document.getElementById('eventTime').value = '';
-    document.getElementById('eventType').value = 'other';
+    document.getElementById('eventType').value = 'task';
     document.getElementById('eventProject').value = '';
     document.getElementById('eventNote').value = '';
   }

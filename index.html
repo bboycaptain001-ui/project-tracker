@@ -799,6 +799,7 @@ header {
           </div>
           <div class="cal-toolbar-actions">
             <button class="btn btn-primary" onclick="openEventModal()">+ 新增行程</button>
+            <button class="btn btn-secondary" id="syncICloudBtn" onclick="syncICloud()">同步 iCloud</button>
             <div class="filter-group" id="calTypeFilter">
               <button class="filter-btn active" onclick="filterEvents('all', this)">全部</button>
               <button class="filter-btn" onclick="filterEvents('task', this)">工作</button>
@@ -1351,7 +1352,35 @@ function switchView(view, btn) {
   btn.classList.add('active');
   document.getElementById('viewProjects').classList.toggle('active', view === 'projects');
   document.getElementById('viewCalendar').classList.toggle('active', view === 'calendar');
-  if (view === 'calendar') renderCalendar();
+  if (view === 'calendar') {
+    renderCalendar();
+    syncICloud(true);
+  }
+}
+
+let lastICloudSync = 0;
+
+async function syncICloud(silent) {
+  const now = Date.now();
+  if (silent && now - lastICloudSync < 30000) return;
+  lastICloudSync = now;
+
+  const btn = document.getElementById('syncICloudBtn');
+  if (btn && !silent) { btn.disabled = true; btn.textContent = '同步中…'; }
+
+  try {
+    const r = await fetch('/api/sync-icloud');
+    const data = await r.json();
+    if (data.error) {
+      if (!silent) alert('同步失敗：' + data.error);
+    } else {
+      await loadEvents();
+    }
+  } catch (err) {
+    if (!silent) alert('同步失敗，請檢查網路連線');
+  } finally {
+    if (btn && !silent) { btn.disabled = false; btn.textContent = '同步 iCloud'; }
+  }
 }
 
 function calNav(delta) {

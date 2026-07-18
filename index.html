@@ -142,6 +142,95 @@ header {
 .view { display: none; }
 .view.active { display: block; }
 
+/* ── Overview ── */
+.ov-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.ov-stat-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.ov-stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.ov-stat-label {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.ov-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.ov-col-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.ov-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ov-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ov-item:hover { border-color: var(--border-dark); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+
+.ov-item-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  min-width: 38px;
+}
+
+.ov-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  flex: 1;
+}
+
+.ov-empty {
+  font-size: 12px;
+  color: var(--ink-faint);
+  padding: 4px 0;
+}
+
+@media (max-width: 768px) {
+  .ov-stats { gap: 8px; margin-bottom: 24px; }
+  .ov-stat-card { padding: 14px 8px; }
+  .ov-stat-value { font-size: 22px; }
+  .ov-columns { grid-template-columns: 1fr; gap: 20px; }
+}
+
 /* ── Controls ── */
 .controls {
   display: flex;
@@ -781,11 +870,39 @@ header {
   </header>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchView('projects', this)">專案看板</button>
+    <button class="tab-btn active" onclick="switchView('overview', this)">總覽</button>
+    <button class="tab-btn" onclick="switchView('projects', this)">專案看板</button>
     <button class="tab-btn" onclick="switchView('calendar', this)">行事曆</button>
   </div>
 
-  <div id="viewProjects" class="view active">
+  <div id="viewOverview" class="view active">
+    <div class="ov-stats">
+      <div class="ov-stat-card">
+        <div class="ov-stat-value" id="ovProjectCount">0</div>
+        <div class="ov-stat-label">進行中專案</div>
+      </div>
+      <div class="ov-stat-card">
+        <div class="ov-stat-value" id="ovTodayCount">0</div>
+        <div class="ov-stat-label">今日行程</div>
+      </div>
+      <div class="ov-stat-card">
+        <div class="ov-stat-value" id="ovTomorrowCount">0</div>
+        <div class="ov-stat-label">明日行程</div>
+      </div>
+    </div>
+    <div class="ov-columns">
+      <div class="ov-col">
+        <div class="ov-col-title">今天 · <span id="ovTodayDate"></span></div>
+        <div class="ov-list" id="ovTodayList"></div>
+      </div>
+      <div class="ov-col">
+        <div class="ov-col-title">明天 · <span id="ovTomorrowDate"></span></div>
+        <div class="ov-list" id="ovTomorrowList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewProjects" class="view">
     <div class="controls">
       <button class="btn btn-primary" onclick="openAddModal()">+ 新增專案</button>
       <button class="btn btn-secondary" onclick="exportData()">匯出備份</button>
@@ -1162,6 +1279,45 @@ function render() {
   document.getElementById('avgProgress').textContent = avg + '%';
   const todoTotal = activeProjects.reduce((s, p) => s + (p.todos || []).filter(t => !t.done).length, 0);
   document.getElementById('todoCount').textContent = todoTotal;
+
+  renderOverview();
+}
+
+function renderOvList(list, emptyText) {
+  if (list.length === 0) return `<div class="ov-empty">${emptyText}</div>`;
+  return list.map(e => {
+    const t = EVENT_TYPES[e.type] || EVENT_TYPES.other;
+    return `
+      <div class="ov-item" onclick="openEventModal('${e.id}')">
+        <span class="status-dot ${t.dot}"></span>
+        <span class="ov-item-time">${e.time ? escapeHtml(e.time) : ''}</span>
+        <span class="ov-item-title">${escapeHtml(e.title)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderOverview() {
+  const activeProjects = projects.filter(p => !p.archived);
+  document.getElementById('ovProjectCount').textContent = activeProjects.length;
+
+  const now = new Date();
+  const todayStr = toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
+  const tmr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tomorrowStr = toDateStr(tmr.getFullYear(), tmr.getMonth(), tmr.getDate());
+
+  document.getElementById('ovTodayDate').textContent = formatDate(todayStr);
+  document.getElementById('ovTomorrowDate').textContent = formatDate(tomorrowStr);
+
+  const sortByTime = (a, b) => (a.time || '99:99').localeCompare(b.time || '99:99');
+  const todayEvents = events.filter(e => e.date === todayStr).sort(sortByTime);
+  const tomorrowEvents = events.filter(e => e.date === tomorrowStr).sort(sortByTime);
+
+  document.getElementById('ovTodayCount').textContent = todayEvents.length;
+  document.getElementById('ovTomorrowCount').textContent = tomorrowEvents.length;
+
+  document.getElementById('ovTodayList').innerHTML = renderOvList(todayEvents, '今天沒有安排的行程');
+  document.getElementById('ovTomorrowList').innerHTML = renderOvList(tomorrowEvents, '明天沒有安排的行程');
 }
 
 function escapeHtml(s) {
@@ -1351,6 +1507,7 @@ async function loadEvents() {
   if (error) { console.error(error); return; }
   events = data.map(dbToEvent);
   if (currentView === 'calendar') renderCalendar();
+  renderOverview();
 }
 
 async function persistEvent(e) {
@@ -1359,15 +1516,18 @@ async function persistEvent(e) {
   return true;
 }
 
-let currentView = 'projects';
+let currentView = 'overview';
 
 function switchView(view, btn) {
   currentView = view;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  document.getElementById('viewOverview').classList.toggle('active', view === 'overview');
   document.getElementById('viewProjects').classList.toggle('active', view === 'projects');
   document.getElementById('viewCalendar').classList.toggle('active', view === 'calendar');
-  if (view === 'calendar') {
+  if (view === 'overview') {
+    renderOverview();
+  } else if (view === 'calendar') {
     renderCalendar();
     syncICloud(true);
   }
@@ -1565,6 +1725,7 @@ async function saveEvent() {
     const idx = events.findIndex(e => e.id === data.id);
     if (idx >= 0) events[idx] = data; else events.push(data);
     renderCalendar();
+    renderOverview();
     closeEventModal();
   } else {
     alert('儲存失敗，請檢查網路連線');
@@ -1579,6 +1740,7 @@ async function deleteEventFromModal() {
   if (!error) {
     events = events.filter(e => e.id !== id);
     renderCalendar();
+    renderOverview();
     closeEventModal();
   } else {
     alert('刪除失敗，請稍後再試');

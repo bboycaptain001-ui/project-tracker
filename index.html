@@ -637,9 +637,23 @@ header {
 }
 
 @media (max-width: 640px) {
-  .cal-grid { grid-auto-rows: minmax(60px, auto); }
-  .cal-pill { font-size: 10px; padding: 1px 4px; }
-  .cal-day-num { font-size: 11px; }
+  .cal-toolbar-actions { width: 100%; }
+  #calTypeFilter {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cal-weekdays div { font-size: 10px; padding-bottom: 4px; }
+  .cal-grid { grid-auto-rows: 58px; }
+  .cal-cell { padding: 3px 3px 4px; gap: 2px; overflow: hidden; }
+  .cal-day-num { font-size: 11px; width: 16px; height: 16px; }
+  .cal-pill { font-size: 9px; padding: 1px 4px; gap: 3px; }
+  .cal-more { font-size: 9px; padding: 0 4px; }
+}
+
+@media (max-width: 400px) {
+  .cal-grid { grid-auto-rows: 48px; }
 }
 
 /* ── Modal ── */
@@ -1438,7 +1452,8 @@ function renderCalendar() {
   grid.innerHTML = cells.map(c => {
     const dayEvents = filtered.filter(e => e.date === c.date).sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
     const isToday = c.date === todayStr;
-    const shown = dayEvents.slice(0, 3);
+    const maxShown = window.innerWidth <= 640 ? 1 : 3;
+    const shown = dayEvents.slice(0, maxShown);
     const more = dayEvents.length - shown.length;
     const pills = shown.map(e => {
       const t = EVENT_TYPES[e.type] || EVENT_TYPES.other;
@@ -1576,6 +1591,12 @@ document.getElementById('eventModal').addEventListener('click', e => {
 const _now = new Date();
 calYear = _now.getFullYear();
 calMonth = _now.getMonth();
+
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => { if (currentView === 'calendar') renderCalendar(); }, 200);
+});
 
 loadProjects();
 loadEvents();

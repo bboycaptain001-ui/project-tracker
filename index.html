@@ -179,10 +179,13 @@ header {
 }
 
 .ov-col-title {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 12px;
+  letter-spacing: -0.2px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
 .ov-list {
@@ -892,11 +895,11 @@ header {
     </div>
     <div class="ov-columns">
       <div class="ov-col">
-        <div class="ov-col-title">今天 · <span id="ovTodayDate"></span></div>
+        <div class="ov-col-title">今天</div>
         <div class="ov-list" id="ovTodayList"></div>
       </div>
       <div class="ov-col">
-        <div class="ov-col-title">明天 · <span id="ovTomorrowDate"></span></div>
+        <div class="ov-col-title">明天</div>
         <div class="ov-list" id="ovTomorrowList"></div>
       </div>
     </div>
@@ -1305,9 +1308,6 @@ function renderOverview() {
   const todayStr = toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
   const tmr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const tomorrowStr = toDateStr(tmr.getFullYear(), tmr.getMonth(), tmr.getDate());
-
-  document.getElementById('ovTodayDate').textContent = formatDate(todayStr);
-  document.getElementById('ovTomorrowDate').textContent = formatDate(tomorrowStr);
 
   const sortByTime = (a, b) => (a.time || '99:99').localeCompare(b.time || '99:99');
   const todayEvents = events.filter(e => e.date === todayStr).sort(sortByTime);

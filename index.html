@@ -501,7 +501,7 @@ header {
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: minmax(96px, auto);
+  grid-auto-rows: 118px;
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
@@ -517,6 +517,7 @@ header {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
 }
 
 .cal-cell:hover { background: var(--surface-alt); }
